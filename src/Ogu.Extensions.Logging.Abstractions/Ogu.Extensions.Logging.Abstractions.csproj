@@ -9,8 +9,8 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Authors>Oğulcan TURAN</Authors>
 		<Copyright>Copyright (c) Oğulcan TURAN 2024</Copyright>
-		<PackageProjectUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging.Abstractions</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging.Abstractions</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging/tree/master/src/Ogu.Extensions.Logging.Abstractions</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging</RepositoryUrl>
 		<PackageTags>http;abstractions;logging;extensions;dotnet</PackageTags>
 		<RepositoryType>git</RepositoryType>
 		<Description>This library contains abstractions for Ogu.Extensions.Logging.*</Description>
