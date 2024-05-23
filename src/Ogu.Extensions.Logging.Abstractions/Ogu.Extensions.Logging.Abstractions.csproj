@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net462;netstandard2.0;netstandard2.1</TargetFrameworks>
+		<AssemblyName>Ogu.Extensions.Logging.Abstractions</AssemblyName>
+		<PackageId>Ogu.Extensions.Logging.Abstractions</PackageId>
+		<Product>Ogu.Extensions.Logging.Abstractions</Product>
+		<Version>1.0.0</Version>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Authors>Oğulcan TURAN</Authors>
+		<Copyright>Copyright (c) Oğulcan TURAN 2024</Copyright>
+		<PackageProjectUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging.Abstractions</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging.Abstractions</RepositoryUrl>
+		<PackageTags>http;abstractions;logging;extensions;dotnet</PackageTags>
+		<RepositoryType>git</RepositoryType>
+		<Description>This library contains abstractions for Ogu.Extensions.Logging.*</Description>
+		<PackageIcon>ogu-logo.png</PackageIcon>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<NeutralLanguage>en</NeutralLanguage>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\logo\ogu-logo.png" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.ObjectPool" Version="8.0.5" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net462' Or '$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'netstandard2.1'">
+		<PackageReference Include="System.Text.Json" Version="8.0.3" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+		<AssemblyName>Ogu.Extensions.Logging.HttpMiddleware</AssemblyName>
+		<PackageId>Ogu.Extensions.Logging.HttpMiddleware</PackageId>
+		<Product>Ogu.Extensions.Logging.HttpMiddleware</Product>
+		<Version>1.0.0</Version>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Authors>Oğulcan TURAN</Authors>
+		<Copyright>Copyright (c) Oğulcan TURAN 2024</Copyright>
+		<PackageProjectUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/ogulcanturan/Ogu.Extensions.Logging</RepositoryUrl>
+		<PackageTags>http;middleware;logging;extensions;dotnet</PackageTags>
+		<RepositoryType>git</RepositoryType>
+		<Description>This library enhances logging capabilities within ASP.NET Core applications by providing middleware</Description>
+		<PackageIcon>ogu-logo.png</PackageIcon>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<NeutralLanguage>en</NeutralLanguage>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\logo\ogu-logo.png" Pack="true" PackagePath="\" Visible="false" />
+		<None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'netstandard2.1'">
+		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' And '$(TargetFramework)' != 'netstandard2.1'">
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Ogu.Extensions.Logging.Abstractions\Ogu.Extensions.Logging.Abstractions.csproj" />
+	</ItemGroup>
+
+</Project>
