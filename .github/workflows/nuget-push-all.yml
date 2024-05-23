@@ -45,4 +45,3 @@ jobs:
 
       - name: Push NuGet package
         run: dotnet nuget push nupkgs/Ogu.Extensions.Logging.HttpMiddleware.${{ github.event.inputs.version_number }}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-
