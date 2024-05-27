@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Ogu.Extensions.Logging.Abstractions;
 
 namespace SampleHttp.Api.Controllers
 {
@@ -22,7 +24,7 @@ namespace SampleHttp.Api.Controllers
         [HttpGet]
         public IActionResult GetSamples()
         {
-            return Ok(Samples);
+            return Ok(HttpContext.RequestServices.GetRequiredService<ILoggingContext>().Get("CorrelationId"));
         }
 
         [HttpGet("test/http-client-logging")]

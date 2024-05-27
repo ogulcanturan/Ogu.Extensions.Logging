@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+
 namespace Ogu.Extensions.Logging.HttpClient
 {
     public class LoggingScopeHttpMessageHandler : DelegatingHandler
@@ -147,7 +148,6 @@ namespace Ogu.Extensions.Logging.HttpClient
 
             if (!string.IsNullOrWhiteSpace(options.MessageTemplate) && _messageTemplate.Text != options.MessageTemplate)
             {
-
                 _messageTemplate = new MessageTemplate(options.MessageTemplate);
             }
 
@@ -165,7 +165,7 @@ namespace Ogu.Extensions.Logging.HttpClient
                 ? new HashSet<string>() 
                 : new HashSet<string>(options.RedactResponseHeaders, StringComparer.OrdinalIgnoreCase);
 
-            if (!options.NotAllowedToLogBodyRequests?.SequenceEqual(_notAllowedToLogBodyRequests) ?? (_notAllowedToLogBodyRequests.Length > 0))
+            if (!options.NotAllowedToLogBodyRequests?.SequenceEqual(_notAllowedToLogBodyRequests) ?? _notAllowedToLogBodyRequests.Length > 0)
             {
                 _notAllowedToLogBodyRequests = options.NotAllowedToLogBodyRequests ?? Array.Empty<string>();
                 _exclusionRegex = _notAllowedToLogBodyRequests.Length > 0 

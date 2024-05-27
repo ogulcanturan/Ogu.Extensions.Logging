@@ -20,7 +20,9 @@ namespace Ogu.Extensions.Logging.Abstractions
         private static Dictionary<string, int> ExtractPlaceholders(string messageTemplate)
         {
             return PlaceholderRegex.Matches(messageTemplate)
+#if !NETSTANDARD2_1
                 .Cast<Match>()
+#endif
                 .Select((g, index) => new { g.Groups[1].Value, index })
                 .ToDictionary(i => i.Value, i => i.index);
         }

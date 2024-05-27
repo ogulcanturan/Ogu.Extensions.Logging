@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http;
 using Ogu.Extensions.Logging.Abstractions;
 using System;
+using System.Linq;
+using System.Net.Http.Headers;
 
 namespace Ogu.Extensions.Logging.HttpClient
 {
@@ -34,6 +36,23 @@ namespace Ogu.Extensions.Logging.HttpClient
 
             services.Replace(ServiceDescriptor.Singleton<IHttpMessageHandlerBuilderFilter, EmptyLoggingHttpMessageHandlerBuilderFilter>());
             return services;
+        }
+
+        public static void AddCorrelationIdHeaderIfMissing(this HttpRequestHeaders headers, ILoggingContext loggingContext, string correlationIdHeaderName = LoggingConstants.CorrelationIdHeaderName)
+        {
+            Guid? correlationId;
+
+            if (headers.TryGetValues(correlationIdHeaderName, out var values) && Guid.TryParse(values.First(), out var parsedValue))
+            {
+                correlationId = parsedValue;
+            }
+            else
+            {
+                correlationId = Guid.NewGuid();
+                headers.Add(correlationIdHeaderName, correlationId.Value.ToString());
+            }
+
+            loggingContext.Upsert(LoggingConstants.CorrelationId, correlationId.Value);
         }
     }
 }

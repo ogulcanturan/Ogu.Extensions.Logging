@@ -34,7 +34,7 @@ builder.Services.AddHttpClientLogging(opts =>
     opts.EnrichLoggingRequest = (loggingContext, message, services) =>
     {
         // (extra)
-        message.Headers.AddCorrelationIdHeaderIfMissing(loggingContext, services);
+        message.Headers.AddCorrelationIdHeaderIfMissingWithHttpContext(loggingContext, services);
     };
 });
 

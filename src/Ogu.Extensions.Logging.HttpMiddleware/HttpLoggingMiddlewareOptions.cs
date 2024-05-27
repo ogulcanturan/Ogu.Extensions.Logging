@@ -104,7 +104,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
                         .Prepend(new KeyValuePair<string, object>("ResponseBody", new object[] { responseBody }));
             }
 
-            return new KeyValuePair<string, object>[]
+            return new[]
             {
                 new KeyValuePair<string,object>("RequestProtocol", httpContext.Request.Protocol),
                 new KeyValuePair<string, object>("RequestMethod", httpContext.Request.Method),

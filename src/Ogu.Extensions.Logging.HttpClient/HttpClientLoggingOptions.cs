@@ -156,7 +156,7 @@ namespace Ogu.Extensions.Logging.HttpClient
             HashSet<string> redactRequestHeaders, IEnumerable<KeyValuePair<string, object>> responseDetails,
             HashSet<string> redactResponseHeaders)
         {
-            return new KeyValuePair<string, object>[8]
+            return new[]
             {
                 new KeyValuePair<string, object>("RequestProtocol", $"HTTP/{requestMessage.Version}"),
                 new KeyValuePair<string, object>("RequestMethod", requestMessage.Method.Method),

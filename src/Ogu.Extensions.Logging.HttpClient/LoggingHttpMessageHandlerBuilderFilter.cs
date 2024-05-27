@@ -24,10 +24,12 @@ namespace Ogu.Extensions.Logging.HttpClient
 
         public Action<HttpMessageHandlerBuilder> Configure(Action<HttpMessageHandlerBuilder> next)
         {
-            if (next == null) 
+            if (next == null)
+            {
                 throw new ArgumentNullException(nameof(next));
+            }
 
-            return (builder) =>
+            return builder =>
             {
                 next(builder);
 

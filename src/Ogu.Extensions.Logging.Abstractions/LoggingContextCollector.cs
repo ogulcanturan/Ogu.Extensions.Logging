@@ -41,6 +41,14 @@ namespace Ogu.Extensions.Logging.Abstractions
             }
         }
 
+        public void Get(out IEnumerable<KeyValuePair<string, object>> properties)
+        {
+            lock (_lock)
+            {
+                properties = _properties;
+            }
+        }
+
         public void Get(out IEnumerable<KeyValuePair<string, object>> properties, out Exception exception)
         {
             lock (_lock)
@@ -50,9 +58,31 @@ namespace Ogu.Extensions.Logging.Abstractions
             }
         }
 
+        public object Get(string propertyName)
+        {
+            lock (_lock)
+            {
+#if NETSTANDARD2_1
+                return _properties.GetValueOrDefault(propertyName);
+#else
+                return _properties.TryGetValue(propertyName, out var result) ? result : null;
+#endif
+            }
+        }
+
+
+        public Exception GetException()
+        {
+            lock (_lock)
+            {
+                return _exception;
+            }
+        }
+
         public void Dispose()
         {
             _collector = null;
+
             if (LoggingCollector.Value == this)
             {
                 LoggingCollector.Value = null;
