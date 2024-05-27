@@ -1,4 +1,5 @@
 name: NuGet Push All
+run-name: NuGet Push All - ${{ github.event.inputs.project_name }} v${{ github.event.inputs.version_number }}
 
 on:
   workflow_dispatch:
