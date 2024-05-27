@@ -1,4 +1,4 @@
-Ogu.Extensions.Logging.HttpMiddleware enhances logging capabilities within ASP.NET Core applications by providing middleware (Similar to Serilog's [RequestLoggingMiddleware](https://github.com/serilog/serilog-aspnetcore/blob/dev/src/Serilog.AspNetCore/AspNetCore/RequestLoggingMiddleware.cs)
+Ogu.Extensions.Logging.HttpMiddleware enhances logging capabilities within ASP.NET Core applications by providing middleware <small>(Similar to Serilog's <sup><sub>[RequestLoggingMiddleware.cs](https://github.com/serilog/serilog-aspnetcore/blob/dev/src/Serilog.AspNetCore/AspNetCore/RequestLoggingMiddleware.cs)</sub></sup>
 
 ## Usage
 
