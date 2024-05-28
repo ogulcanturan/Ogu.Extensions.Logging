@@ -112,8 +112,8 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
                 new KeyValuePair<string, object>("StatusCode", statusCode),
                 new KeyValuePair<string, object>("StatusCodeLiteral", (HttpStatusCode)statusCode),
                 new KeyValuePair<string, object>("Elapsed", elapsedMs),
-                new KeyValuePair<string, object>("RequestDetails", Helper.BuildDetails("RequestDetails", requestDetails, redactRequestHeaders)),
-                new KeyValuePair<string, object>("ResponseDetails", Helper.BuildDetails("ResponseDetails", responseDetails, redactResponseHeaders)),
+                new KeyValuePair<string, object>("RequestDetails", LoggingHelper.BuildDetails("RequestDetails", requestDetails, redactRequestHeaders)),
+                new KeyValuePair<string, object>("ResponseDetails", LoggingHelper.BuildDetails("ResponseDetails", responseDetails, redactResponseHeaders)),
             };
         }
 

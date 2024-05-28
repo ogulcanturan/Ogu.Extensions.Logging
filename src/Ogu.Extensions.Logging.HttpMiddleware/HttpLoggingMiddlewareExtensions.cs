@@ -67,7 +67,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             {
                 var httpContextAccessor = services.GetService<IHttpContextAccessor>();
 
-                if (httpContextAccessor?.HttpContext != null && httpContextAccessor.HttpContext.Request.Headers.TryGetValue(correlationIdHeaderName, out var value) && Guid.TryParse(value, out var parsedValue2))
+                if (httpContextAccessor?.HttpContext?.Request.Headers.TryGetValue(correlationIdHeaderName, out var value) == true && Guid.TryParse(value, out var parsedValue2))
                 {
                     correlationId = parsedValue2;
                     headers.Add(correlationIdHeaderName, value.ToString());

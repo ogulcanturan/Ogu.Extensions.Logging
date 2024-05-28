@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Ogu.Extensions.Logging.Abstractions
 {
-    public static class Helper
+    public static class LoggingHelper
     {
         public static readonly IReadOnlyCollection<string> UnreadableContentTypes = new HashSet<string>()
         {

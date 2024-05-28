@@ -110,15 +110,15 @@ namespace Ogu.Extensions.Logging.HttpClient
 
                     await Task.WhenAll(requestBodyPayloadTask, responseBodyPayloadTask).ConfigureAwait(false);
 
-                    Log(requestMessage, responseMessage, collector, requestBodyPayloadTask.Result, responseBodyPayloadTask.Result, (int)responseMessage.StatusCode, Helper.GetElapsedMilliseconds(startTimestamp, stop), true, null);
+                    Log(requestMessage, responseMessage, collector, requestBodyPayloadTask.Result, responseBodyPayloadTask.Result, (int)responseMessage.StatusCode, LoggingHelper.GetElapsedMilliseconds(startTimestamp, stop), true, null);
                 }
                 else
                 {
-                    Log(requestMessage, responseMessage, collector, null, null, (int)responseMessage.StatusCode, Helper.GetElapsedMilliseconds(startTimestamp, stop), false, null);
+                    Log(requestMessage, responseMessage, collector, null, null, (int)responseMessage.StatusCode, LoggingHelper.GetElapsedMilliseconds(startTimestamp, stop), false, null);
                 }
             }
             catch (Exception ex)
-                when (Log(requestMessage, responseMessage, collector, null, null, 500, Helper.GetElapsedMilliseconds(startTimestamp, Stopwatch.GetTimestamp()), isAllowedToLog, ex))
+                when (Log(requestMessage, responseMessage, collector, null, null, 500, LoggingHelper.GetElapsedMilliseconds(startTimestamp, Stopwatch.GetTimestamp()), isAllowedToLog, ex))
             {
             }
             finally
@@ -176,7 +176,7 @@ namespace Ogu.Extensions.Logging.HttpClient
 
         public async Task<string> ReadBodyAsync(HttpContent httpContent)
         {
-            return Helper.UnreadableContentTypes.Contains(httpContent.Headers.ContentType.MediaType)
+            return LoggingHelper.UnreadableContentTypes.Contains(httpContent.Headers.ContentType.MediaType)
                 ? Convert.ToBase64String(await httpContent.ReadAsByteArrayAsync().ConfigureAwait(false))
                 : await httpContent.ReadAsStringAsync().ConfigureAwait(false);
         }

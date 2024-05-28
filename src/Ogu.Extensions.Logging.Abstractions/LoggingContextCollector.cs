@@ -70,7 +70,6 @@ namespace Ogu.Extensions.Logging.Abstractions
             }
         }
 
-
         public Exception GetException()
         {
             lock (_lock)

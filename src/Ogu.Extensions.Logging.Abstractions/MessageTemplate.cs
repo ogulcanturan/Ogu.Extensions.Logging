@@ -6,6 +6,8 @@ namespace Ogu.Extensions.Logging.Abstractions
 {
     public class MessageTemplate
     {
+        private static readonly Regex PlaceholderRegex = new Regex(@"\{([^{}:]+)(?::[^{}]*)?\}", RegexOptions.Compiled);
+
         public MessageTemplate(string template)
         {
             Text = template;
@@ -14,8 +16,6 @@ namespace Ogu.Extensions.Logging.Abstractions
 
         public Dictionary<string, int> Placeholders { get; }
         public string Text { get; }
-
-        private static readonly Regex PlaceholderRegex = new Regex(@"\{([^{}:]+)(?::[^{}]*)?\}", RegexOptions.Compiled);
 
         private static Dictionary<string, int> ExtractPlaceholders(string messageTemplate)
         {

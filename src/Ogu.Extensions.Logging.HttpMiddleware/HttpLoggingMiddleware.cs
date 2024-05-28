@@ -141,7 +141,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
         {
             response.Body.Seek(0, SeekOrigin.Begin);
 
-            var responseBody = await (Helper.UnreadableContentTypes.Contains(response.ContentType)
+            var responseBody = await (LoggingHelper.UnreadableContentTypes.Contains(response.ContentType)
                     ? GetBase64StringFromStream(response.Body)
                     : GetStringFromStream(response.Body));
 
@@ -179,7 +179,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
                 _ = await request.Body.ReadAsync(buffer, buffer.Length, (int)(buffer.LongLength - buffer.Length)).ConfigureAwait(false);
             }
 
-            var requestBody = Helper.UnreadableContentTypes.Contains(request.ContentType) 
+            var requestBody = LoggingHelper.UnreadableContentTypes.Contains(request.ContentType) 
                 ? Convert.ToBase64String(buffer) : 
                 Encoding.UTF8.GetString(buffer);
 
@@ -238,7 +238,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             {
                 var stop = Stopwatch.GetTimestamp();
 
-                var properties = collectedProperties.Concat(_getMessageTemplateProperties(httpContext, GetPath(httpContext, _includeQueryInRequestPath), requestBody, responseBody, responseContentLength, Helper.GetElapsedMilliseconds(startTimestamp, stop), statusCode, _redactRequestHeaders, _redactResponseHeaders, isAllowedToLog && _includeRequestHeaders, isAllowedToLog && _includeResponseHeaders));
+                var properties = collectedProperties.Concat(_getMessageTemplateProperties(httpContext, GetPath(httpContext, _includeQueryInRequestPath), requestBody, responseBody, responseContentLength, LoggingHelper.GetElapsedMilliseconds(startTimestamp, stop), statusCode, _redactRequestHeaders, _redactResponseHeaders, isAllowedToLog && _includeRequestHeaders, isAllowedToLog && _includeResponseHeaders));
 
                 _logger.Log(level, ex ?? collectedException, _messageTemplate, properties);
 
