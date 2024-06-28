@@ -77,7 +77,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
                 requestDetails = HeaderValues(httpContext.Request.Headers)
                     .OrderBy(c => c.Key)
 #if NET6_0_OR_GREATER
-                    .Prepend(new KeyValuePair<string, object>("Controller & Action", httpContext.Request.RouteValues.Take(2).Select(x => x.Value).ToArray()))
+                    .Prepend(new KeyValuePair<string, object>("RouteValues", httpContext.Request.RouteValues.Select(x => $"{x.Key}={x.Value}")))
 #endif
                     .Prepend(new KeyValuePair<string, object>("Scheme", new object[] { httpContext.Request.Scheme }))
                     .Prepend(new KeyValuePair<string, object>("RequestProtocol", new object[] { httpContext.Request.Protocol }))
