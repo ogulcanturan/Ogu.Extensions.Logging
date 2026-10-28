@@ -76,13 +76,13 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
         {
             var startTimestamp = Stopwatch.GetTimestamp();
             var collector = _loggingContext.Start();
-            var isAllowedToLog = _exclusionRegex == null || !_exclusionRegex.IsMatch(httpContext.Request.Path.Value);
+            var shouldIncludeDetails = _exclusionRegex == null || !_exclusionRegex.IsMatch(httpContext.Request.Path.Value);
 
             try
             {
                 _enrichLoggingContextOnResponseStarting?.Invoke(_loggingContext, httpContext);
 
-                if (isAllowedToLog)
+                if (shouldIncludeDetails)
                 {
                     var requestBodyPayload = _includeRequestBody && _maxRequestBodyLength >= httpContext.Request.ContentLength ? await ReadRequestBodyAsync(httpContext.Request).ConfigureAwait(false) : null;
                     string response = null;
@@ -124,11 +124,11 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
                 else
                 {
                     await _next(httpContext);
-                    Log(httpContext, collector, default, default, default, httpContext.Response.StatusCode, startTimestamp, false, null);
+                    Log(httpContext, collector, null, null, null, httpContext.Response.StatusCode, startTimestamp, false, null);
                 }
             }
             catch (Exception ex)
-                when (Log(httpContext, collector, null, null, null, 500, startTimestamp, isAllowedToLog, ex))
+                when (Log(httpContext, collector, null, null, null, 500, startTimestamp, shouldIncludeDetails, ex))
             {
             }
             finally
@@ -221,7 +221,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             }
         }
 
-        private bool Log(HttpContext httpContext, LoggingContextCollector collector, string requestBody, string responseBody, long? responseContentLength, int statusCode, long startTimestamp, bool isAllowedToLog, Exception ex)
+        private bool Log(HttpContext httpContext, LoggingContextCollector collector, string requestBody, string responseBody, long? responseContentLength, int statusCode, long startTimestamp, bool shouldIncludeDetails, Exception ex)
         {
             var level = _getLevel(httpContext, ex);
 
@@ -238,7 +238,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             {
                 var stop = Stopwatch.GetTimestamp();
 
-                var properties = collectedProperties.Concat(_getMessageTemplateProperties(httpContext, GetPath(httpContext, _includeQueryInRequestPath), requestBody, responseBody, responseContentLength, LoggingHelper.GetElapsedMilliseconds(startTimestamp, stop), statusCode, _redactRequestHeaders, _redactResponseHeaders, isAllowedToLog && _includeRequestHeaders, isAllowedToLog && _includeResponseHeaders));
+                var properties = collectedProperties.Concat(_getMessageTemplateProperties(httpContext, GetPath(httpContext, _includeQueryInRequestPath), requestBody, responseBody, responseContentLength, LoggingHelper.GetElapsedMilliseconds(startTimestamp, stop), statusCode, _redactRequestHeaders, _redactResponseHeaders, shouldIncludeDetails && _includeRequestHeaders, shouldIncludeDetails && _includeResponseHeaders));
 
                 _logger.Log(level, ex ?? collectedException, _messageTemplate, properties);
 

@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Ogu.Extensions.Logging.Abstractions
 {
     public static class LoggingHelper
     {
-        public static readonly IReadOnlyCollection<string> UnreadableContentTypes = new HashSet<string>()
+        private const string Redacted = "[REDACTED]";
+        private const string KeyValueSeparator = ": ";
+        private const string EntrySeparator = ", ";
+        private const string SectionDivider = "------";
+
+        public static readonly HashSet<string> UnreadableContentTypes = new HashSet<string>
         {
             "application/zip",
             "application/x-gzip",
@@ -28,50 +32,73 @@ namespace Ogu.Extensions.Logging.Abstractions
 
         public static double GetElapsedMilliseconds(long start, long stop) => (stop - start) * 1000 / (double)Stopwatch.Frequency;
 
+        internal static string FormatHttpProtocol(Version version)
+        {
+            return $"HTTP/{version}";
+        }
+
         public static string BuildDetails(string title, IEnumerable<KeyValuePair<string, object>> keyValuePairs, HashSet<string> redactValues)
         {
-            var keyValuePairsList = keyValuePairs.GroupBy(k => k.Key).Select(g => g.First()).ToArray();
-
-            if (keyValuePairsList.Length == 0)
-            {
-                return string.Empty;
-            }
-
             using (var pool = new StringBuilderPool())
             {
-                pool.Builder.AppendLine();
-                pool.Builder.AppendFormat("------{0}------{1}", title, Environment.NewLine);
+                var seenKeys = new HashSet<string>();
+                var hasEntries = false;
 
-                for (var i = 0; i < keyValuePairsList.Length; i++)
+                foreach (var kvp in keyValuePairs)
                 {
-                    var kvp = keyValuePairsList[i];
-                    pool.Builder.Append(kvp.Key).Append(": ");
-
-                    if (redactValues.Contains(kvp.Key))
+                    if (!seenKeys.Add(kvp.Key))
                     {
-                        pool.Builder.Append("[REDACTED]");
+                        continue;
+                    }
+
+                    if (!hasEntries)
+                    {
+                        pool.Builder
+                            .AppendLine()
+                            .Append(SectionDivider)
+                            .Append(title)
+                            .AppendLine(SectionDivider);
+
+                        hasEntries = true;
                     }
                     else
                     {
-#if NETCOREAPP
-                        pool.Builder.AppendJoin(", ", (IEnumerable<object>)kvp.Value);
-#else
-                        foreach (var value in (IEnumerable<object>)kvp.Value)
-                        {
-                            pool.Builder.Append(value).Append(", ");
-                        }
-
-                        pool.Builder.Remove(pool.Builder.Length - 2, 2);
-#endif
-                    }
-
-                    if (keyValuePairsList.Length - 1 != i)
-                    {
                         pool.Builder.AppendLine();
                     }
-                }
 
-                return pool.Builder.ToString();
+                    pool.Builder
+                        .Append(kvp.Key)
+                        .Append(KeyValueSeparator);
+
+                    if (redactValues.Contains(kvp.Key))
+                    {
+                        pool.Builder.Append(Redacted);
+                        continue;
+                    }
+
+                    if (kvp.Value is IEnumerable<object> values)
+                    {
+                        var isFirst = true;
+
+                        foreach (var value in values)
+                        {
+                            if (!isFirst)
+                            {
+                                pool.Builder.Append(EntrySeparator);
+                            }
+
+                            pool.Builder.Append(value);
+                            isFirst = false;
+                        }
+                    }
+                    else
+                    {
+                        pool.Builder.Append(kvp.Value);
+                    }
+                }
+                return hasEntries
+                    ? pool.Builder.ToString()
+                    : string.Empty;
             }
         }
     }

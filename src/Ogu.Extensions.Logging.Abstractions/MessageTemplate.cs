@@ -1,12 +1,19 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Ogu.Extensions.Logging.Abstractions
 {
-    public class MessageTemplate
+    public partial class MessageTemplate
     {
-        private static readonly Regex PlaceholderRegex = new Regex(@"\{([^{}:]+)(?::[^{}]*)?\}", RegexOptions.Compiled);
+#if NET7_0_OR_GREATER
+        [GeneratedRegex(@"\{([^{}:]+)(?::[^{}]*)?\}")]
+        private static partial Regex GetPlaceholderRegex();
+#else
+        private static readonly Regex PlaceholderRegex =
+            new Regex(@"\{([^{}:]+)(?::[^{}]*)?\}", RegexOptions.Compiled);
+
+        private static Regex GetPlaceholderRegex() => PlaceholderRegex;
+#endif
 
         public MessageTemplate(string template)
         {
@@ -19,12 +26,23 @@ namespace Ogu.Extensions.Logging.Abstractions
 
         private static Dictionary<string, int> ExtractPlaceholders(string messageTemplate)
         {
-            return PlaceholderRegex.Matches(messageTemplate)
-#if !NETSTANDARD2_1
-                .Cast<Match>()
-#endif
-                .Select((g, index) => new { g.Groups[1].Value, index })
-                .ToDictionary(i => i.Value, i => i.index);
+            var index = 0;
+
+            var matches = GetPlaceholderRegex().Matches(messageTemplate);
+
+            var placeholders = new Dictionary<string, int>(matches.Count);
+
+            if (matches.Count == 0)
+            {
+                return placeholders;
+            }
+
+            foreach (Match match in matches)
+            {
+                placeholders[match.Groups[1].Value] = index++;
+            }
+
+            return placeholders;
         }
     }
 }

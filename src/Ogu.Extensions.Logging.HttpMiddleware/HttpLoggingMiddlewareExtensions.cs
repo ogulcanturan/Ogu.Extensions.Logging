@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Ogu.Extensions.Logging.Abstractions;
 using System;
 using System.Linq;
@@ -67,16 +68,25 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             {
                 var httpContextAccessor = services.GetService<IHttpContextAccessor>();
 
-                if (httpContextAccessor?.HttpContext?.Request.Headers.TryGetValue(correlationIdHeaderName, out var value) == true && Guid.TryParse(value, out var parsedValue2))
+                string headerValue = null;
+
+                if (httpContextAccessor?.HttpContext?.Request.Headers
+                        .TryGetValue(correlationIdHeaderName, out var value) == true)
                 {
-                    correlationId = parsedValue2;
-                    headers.Add(correlationIdHeaderName, value.ToString());
+                    headerValue = value.ToString();
+                }
+
+                if (Guid.TryParse(headerValue, out var parsed))
+                {
+                    correlationId = parsed;
                 }
                 else
                 {
                     correlationId = Guid.NewGuid();
-                    headers.Add(correlationIdHeaderName, correlationId.Value.ToString());
+                    headerValue = correlationId.Value.ToString();
                 }
+
+                headers.Add(correlationIdHeaderName, headerValue);
             }
 
             loggingContext.Upsert(LoggingConstants.CorrelationId, correlationId.Value);
@@ -85,8 +95,14 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
         public static void AddCorrelationIdHeaderIfMissing(this HttpContext httpContext, ILoggingContext loggingContext, string correlationIdHeaderName = LoggingConstants.CorrelationIdHeaderName)
         {
             Guid? correlationId;
+            string headerValue = null;
 
-            if (httpContext.Request.Headers.TryGetValue(correlationIdHeaderName, out var value) && Guid.TryParse(value, out var parsedValue))
+            if (httpContext.Request.Headers.TryGetValue(correlationIdHeaderName, out var value))
+            {
+                headerValue = value.ToString();
+            }
+
+            if (Guid.TryParse(headerValue, out var parsedValue))
             {
                 correlationId = parsedValue;
                 httpContext.Response.Headers[correlationIdHeaderName] = value;
@@ -94,7 +110,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             else
             {
                 correlationId = Guid.NewGuid();
-                var correlationIdAsString = correlationId.ToString();
+                var correlationIdAsString = new StringValues(correlationId.Value.ToString());
                 httpContext.Request.Headers[correlationIdHeaderName] = correlationIdAsString;
                 httpContext.Response.Headers[correlationIdHeaderName] = correlationIdAsString;
             }

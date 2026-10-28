@@ -8,9 +8,13 @@ namespace Ogu.Extensions.Logging.Abstractions
     {
         private static readonly AsyncLocal<LoggingContextCollector> LoggingCollector = new AsyncLocal<LoggingContextCollector>();
 
+#if NET9_0_OR_GREATER
+        private readonly Lock _lock = new();
+#else
         private readonly object _lock = new object();
+#endif
         private Exception _exception;
-        private readonly Dictionary<string, object> _properties = new Dictionary<string, object>();
+        private Dictionary<string, object> _properties;
         private LoggingContextCollector _collector;
 
         public static LoggingContextCollector Start()
@@ -27,7 +31,7 @@ namespace Ogu.Extensions.Logging.Abstractions
         {
             lock (_lock)
             {
-                _properties[key] = value;
+                (_properties = _properties ?? new Dictionary<string, object>())[key] = value;
             }
         }
 

@@ -12,12 +12,10 @@ namespace Ogu.Extensions.Logging.HttpClient
 {
     public class HttpClientLoggingOptions
     {
-        private const string DefaultRequestCompletionMessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} ({StatusCodeLiteral}) in {Elapsed:0.0000}ms {RequestDetails}{ResponseDetails}";
-
         public HttpClientLoggingOptions()
         {
             GetLevel = DefaultGetLevel;
-            MessageTemplate = DefaultRequestCompletionMessageTemplate;
+            MessageTemplate = LoggingConstants.DefaultRequestCompletionMessageTemplate;
             GetMessageTemplateProperties = DefaultGetMessageTemplateProperties;
 
             IncludeQueryInRequestPath = true;
@@ -62,10 +60,9 @@ namespace Ogu.Extensions.Logging.HttpClient
 
         private static LogLevel DefaultGetLevel(HttpResponseMessage responseMessage, Exception ex)
         {
-            if (ex != null || (int)responseMessage.StatusCode >= 500)
-                return LogLevel.Error;
-
-            return LogLevel.Information;
+            return ex != null || (int)responseMessage.StatusCode >= 500 
+                ? LogLevel.Error 
+                : LogLevel.Information;
         }
 
         private static IEnumerable<KeyValuePair<string, object>> DefaultGetMessageTemplateProperties(HttpRequestMessage requestMessage, HttpResponseMessage responseMessage, string requestPath, string requestBody, string responseBody, double elapsedMs, int statusCode, HashSet<string> redactRequestHeaders, HashSet<string> redactResponseHeaders, bool includeRequestHeaders, bool includeResponseHeaders)
@@ -81,14 +78,14 @@ namespace Ogu.Extensions.Logging.HttpClient
                     .OrderBy(c => c.Key)
                     .ToList();
 
-                requestDetails.Insert(0, new KeyValuePair<string, object>("Scheme", new object[] { requestMessage.RequestUri.Scheme }));
-                requestDetails.Insert(0, new KeyValuePair<string, object>("RequestProtocol", new object[] { $"HTTP/{requestMessage.Version}" }));
-                requestDetails.Insert(0, new KeyValuePair<string, object>("QueryString", new object[] { requestMessage.RequestUri.Query }));
+                requestDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.Scheme, requestMessage.RequestUri.Scheme));
+                requestDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestProtocol, LoggingHelper.FormatHttpProtocol(requestMessage.Version)));
+                requestDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.QueryString, requestMessage.RequestUri.Query));
             }
 
             if (requestBody != null)
             {
-                requestDetails.Insert(0, new KeyValuePair<string, object>("RequestBody", new object[] { requestBody }));
+                requestDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestBody, requestBody));
             }
 
             if (responseMessage != null)
@@ -96,15 +93,15 @@ namespace Ogu.Extensions.Logging.HttpClient
                 if (includeResponseHeaders)
                 {
                     responseDetails = HeaderValues(responseMessage.Headers).ToList();
-                    responseDetails.Insert(0, new KeyValuePair<string, object>("Content-Type", new object[] { responseMessage.Content.Headers.ContentType }));
-                    responseDetails.Insert(0, new KeyValuePair<string, object>("Content-Encoding", new object[] { responseMessage.Content.Headers.ContentEncoding }));
+                    responseDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.ContentType, responseMessage.Content.Headers.ContentType));
+                    responseDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.ContentEncoding, responseMessage.Content.Headers.ContentEncoding));
                 }
 
                 if (responseBody != null)
                 {
-                    responseDetails.Insert(0, new KeyValuePair<string, object>("Content-Length", new object[] { responseMessage.Content.Headers.ContentLength }));
+                    responseDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.ContentLength, responseMessage.Content.Headers.ContentLength));
                     responseDetails = responseDetails.OrderBy(c => c.Key).ToList();
-                    responseDetails.Insert(0, new KeyValuePair<string, object>("ResponseBody", new object[] { responseBody }));
+                    responseDetails.Insert(0, new KeyValuePair<string, object>(HttpLoggingPropertyNames.ResponseBody, responseBody));
                 }
             }
 
@@ -116,15 +113,15 @@ namespace Ogu.Extensions.Logging.HttpClient
             {
                 requestDetails = HeaderValues(requestMessage.Headers).Concat(HeaderValues(requestMessage.Content?.Headers))
                     .OrderBy(c => c.Key)
-                    .Prepend(new KeyValuePair<string, object>("Scheme", new object[] { requestMessage.RequestUri.Scheme }))
-                    .Prepend(new KeyValuePair<string, object>("RequestProtocol", new object[] { $"HTTP/{requestMessage.Version}" }))
-                    .Prepend(new KeyValuePair<string, object>("QueryString", new object[] { requestMessage.RequestUri.Query }));
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.Scheme, requestMessage.RequestUri.Scheme))
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestProtocol, LoggingHelper.FormatHttpProtocol(requestMessage.Version)))
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.QueryString, requestMessage.RequestUri.Query));
             }
 
             if (requestBody != null)
             {
                 requestDetails = requestDetails
-                    .Prepend(new KeyValuePair<string, object>("RequestBody", new object[] { requestBody }));
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestBody, requestBody));
             }
 
             if (responseMessage != null)
@@ -132,17 +129,17 @@ namespace Ogu.Extensions.Logging.HttpClient
                 if (includeResponseHeaders)
                 {
                     responseDetails = HeaderValues(responseMessage.Headers)
-                        .Prepend(new KeyValuePair<string, object>("Content-Type", new object[] { responseMessage.Content.Headers.ContentType }))
-                        .Prepend(new KeyValuePair<string, object>("Content-Encoding", new object[] { responseMessage.Content.Headers.ContentEncoding }));
+                        .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.ContentType, responseMessage.Content.Headers.ContentType))
+                        .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.ContentEncoding, responseMessage.Content.Headers.ContentEncoding));
                 }
 
                 if (responseBody != null)
                 {
                     responseDetails =
                         responseDetails
-                            .Prepend(new KeyValuePair<string, object>("Content-Length", new object[] { responseMessage.Content.Headers.ContentLength }))
+                            .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.ContentLength, responseMessage.Content.Headers.ContentLength))
                             .OrderBy(c => c.Key)
-                            .Prepend(new KeyValuePair<string, object>("ResponseBody", new object[] { responseBody }));
+                            .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.ResponseBody, responseBody));
                 }
             }
 #endif
@@ -158,14 +155,14 @@ namespace Ogu.Extensions.Logging.HttpClient
         {
             return new[]
             {
-                new KeyValuePair<string, object>("RequestProtocol", $"HTTP/{requestMessage.Version}"),
-                new KeyValuePair<string, object>("RequestMethod", requestMessage.Method.Method),
-                new KeyValuePair<string, object>("RequestPath", requestPath),
-                new KeyValuePair<string, object>("StatusCode", statusCode),
-                new KeyValuePair<string, object>("StatusCodeLiteral", (HttpStatusCode)statusCode),
-                new KeyValuePair<string, object>("Elapsed", elapsedMs),
-                new KeyValuePair<string, object>("RequestDetails", LoggingHelper.BuildDetails("RequestDetails", requestDetails, redactRequestHeaders)),
-                new KeyValuePair<string, object>("ResponseDetails", LoggingHelper.BuildDetails("ResponseDetails", responseDetails, redactResponseHeaders))
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestProtocol, LoggingHelper.FormatHttpProtocol(requestMessage.Version)),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestMethod, requestMessage.Method.Method),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestPath, requestPath),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.StatusCode, statusCode),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.StatusCodeLiteral, (HttpStatusCode)statusCode),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.Elapsed, elapsedMs),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestDetails, LoggingHelper.BuildDetails(HttpLoggingPropertyNames.RequestDetails, requestDetails, redactRequestHeaders)),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.ResponseDetails, LoggingHelper.BuildDetails(HttpLoggingPropertyNames.ResponseDetails, responseDetails, redactResponseHeaders))
             };
         }
 

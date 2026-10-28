@@ -11,12 +11,10 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
 {
     public class HttpLoggingMiddlewareOptions
     {
-        private const string DefaultRequestCompletionMessageTemplate = "{RequestMethod} {RequestPath} responded {StatusCode} ({StatusCodeLiteral}) in {Elapsed:0.0000}ms {RequestDetails}{ResponseDetails}";
-
         public HttpLoggingMiddlewareOptions()
         {
             GetLevel = DefaultGetLevel;
-            MessageTemplate = DefaultRequestCompletionMessageTemplate;
+            MessageTemplate = LoggingConstants.DefaultRequestCompletionMessageTemplate;
             GetMessageTemplateProperties = DefaultGetMessageTemplateProperties;
 
             IncludeQueryInRequestPath = true;
@@ -77,11 +75,11 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
                 requestDetails = HeaderValues(httpContext.Request.Headers)
                     .OrderBy(c => c.Key)
 #if NET6_0_OR_GREATER
-                    .Prepend(new KeyValuePair<string, object>("RouteValues", httpContext.Request.RouteValues.Select(x => $"{x.Key}={x.Value}")))
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.RouteValues, httpContext.Request.RouteValues.Select(x => $"{x.Key}={x.Value}")))
 #endif
-                    .Prepend(new KeyValuePair<string, object>("Scheme", new object[] { httpContext.Request.Scheme }))
-                    .Prepend(new KeyValuePair<string, object>("RequestProtocol", new object[] { httpContext.Request.Protocol }))
-                    .Prepend(new KeyValuePair<string, object>("QueryString", new object[] { httpContext.Request.QueryString }));
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.Scheme, httpContext.Request.Scheme))
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestProtocol, httpContext.Request.Protocol))
+                    .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.QueryString, httpContext.Request.QueryString));
 
             }
 
@@ -89,7 +87,7 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             {
                 requestDetails =
                     requestDetails
-                        .Prepend(new KeyValuePair<string, object>("RequestBody", new object[] { requestBody }));
+                        .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestBody, requestBody));
             }
 
             if (includeResponseHeaders)
@@ -99,21 +97,21 @@ namespace Ogu.Extensions.Logging.HttpMiddleware
             {
                 responseDetails =
                     responseDetails
-                        .Prepend(new KeyValuePair<string, object>("Content-Length", new object[] { responseContentLength }))
+                        .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.ContentLength, responseContentLength))
                         .OrderBy(c => c.Key)
-                        .Prepend(new KeyValuePair<string, object>("ResponseBody", new object[] { responseBody }));
+                        .Prepend(new KeyValuePair<string, object>(HttpLoggingPropertyNames.ResponseBody, responseBody));
             }
 
             return new[]
             {
-                new KeyValuePair<string,object>("RequestProtocol", httpContext.Request.Protocol),
-                new KeyValuePair<string, object>("RequestMethod", httpContext.Request.Method),
-                new KeyValuePair<string, object>("RequestPath", requestPath),
-                new KeyValuePair<string, object>("StatusCode", statusCode),
-                new KeyValuePair<string, object>("StatusCodeLiteral", (HttpStatusCode)statusCode),
-                new KeyValuePair<string, object>("Elapsed", elapsedMs),
-                new KeyValuePair<string, object>("RequestDetails", LoggingHelper.BuildDetails("RequestDetails", requestDetails, redactRequestHeaders)),
-                new KeyValuePair<string, object>("ResponseDetails", LoggingHelper.BuildDetails("ResponseDetails", responseDetails, redactResponseHeaders)),
+                new KeyValuePair<string,object>(HttpLoggingPropertyNames.RequestProtocol, httpContext.Request.Protocol),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestMethod, httpContext.Request.Method),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestPath, requestPath),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.StatusCode, statusCode),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.StatusCodeLiteral, (HttpStatusCode)statusCode),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.Elapsed, elapsedMs),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.RequestDetails, LoggingHelper.BuildDetails(HttpLoggingPropertyNames.RequestDetails, requestDetails, redactRequestHeaders)),
+                new KeyValuePair<string, object>(HttpLoggingPropertyNames.ResponseDetails, LoggingHelper.BuildDetails(HttpLoggingPropertyNames.ResponseDetails, responseDetails, redactResponseHeaders)),
             };
         }
 

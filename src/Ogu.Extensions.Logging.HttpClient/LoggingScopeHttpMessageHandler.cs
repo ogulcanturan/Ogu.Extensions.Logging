@@ -14,6 +14,8 @@ namespace Ogu.Extensions.Logging.HttpClient
 {
     public class LoggingScopeHttpMessageHandler : DelegatingHandler
     {
+        private const string DefaultLoggerName = "Default";
+
         private readonly LoggingContext _loggingContext;
         private readonly IServiceProvider _serviceProvider;
         private readonly Action<ILoggingContext, HttpRequestMessage, IServiceProvider> _enrichLoggingRequest;
@@ -40,7 +42,7 @@ namespace Ogu.Extensions.Logging.HttpClient
             _loggingContext = loggingContext;
             _serviceProvider = serviceProvider;
 
-            var loggerName = !string.IsNullOrEmpty(builderName) ? builderName : "Default";
+            var loggerName = !string.IsNullOrEmpty(builderName) ? builderName : DefaultLoggerName;
             var options = loggingOptionsMonitor.CurrentValue ?? new HttpClientLoggingOptions();
 
             _optionsMonitor = loggingOptionsMonitor.OnChange(OptionsChanged);
@@ -65,17 +67,14 @@ namespace Ogu.Extensions.Logging.HttpClient
                 ? new HashSet<string>()
                 : new HashSet<string>(options.RedactResponseHeaders, StringComparer.OrdinalIgnoreCase);
             _notAllowedToLogBodyRequests = options.NotAllowedToLogBodyRequests ?? Array.Empty<string>();
-            _exclusionRegex = _notAllowedToLogBodyRequests.Length > 0 
-                ? new Regex(string.Join("|", options.NotAllowedToLogBodyRequests.Select(Regex.Escape)), RegexOptions.IgnoreCase | RegexOptions.Compiled) 
+            _exclusionRegex = _notAllowedToLogBodyRequests.Length > 0
+                ? new Regex(string.Join("|", options.NotAllowedToLogBodyRequests.Select(Regex.Escape)), RegexOptions.IgnoreCase | RegexOptions.Compiled)
                 : null;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-
-            return Core(request, cancellationToken);
+            return request == null ? throw new ArgumentNullException(nameof(request)) : Core(request, cancellationToken);
         }
 
         internal async Task<HttpResponseMessage> Core(HttpRequestMessage requestMessage, CancellationToken cancellationToken)
@@ -86,8 +85,10 @@ namespace Ogu.Extensions.Logging.HttpClient
 
             HttpResponseMessage responseMessage = null;
 
-            var isAllowedToLog = _exclusionRegex == null || !_exclusionRegex.IsMatch(requestMessage.RequestUri.AbsolutePath);
-
+            var shouldIncludeDetails = _exclusionRegex == null ||
+                                       (requestMessage.RequestUri != null &&
+                                        requestMessage.RequestUri.IsAbsoluteUri &&
+                                        !_exclusionRegex.IsMatch(requestMessage.RequestUri.AbsolutePath));
             try
             {
                 _enrichLoggingRequest?.Invoke(_loggingContext, requestMessage, _serviceProvider);
@@ -96,29 +97,31 @@ namespace Ogu.Extensions.Logging.HttpClient
 
                 responseMessage = await base.SendAsync(requestMessage, cancellationToken).ConfigureAwait(false);
 
-                var stop = Stopwatch.GetTimestamp();
+                var stopTimestamp = Stopwatch.GetTimestamp();
 
-                if (isAllowedToLog)
+                if (shouldIncludeDetails)
                 {
-                    var requestBodyPayloadTask = _includeRequestBody && requestMessage.Content != null && _maxRequestBodyLength >= requestMessage.Content.Headers.ContentLength
+                    var requestBodyPayloadTask = _includeRequestBody && ShouldReadBody(requestMessage.Content, _maxRequestBodyLength)
                         ? ReadBodyAsync(requestMessage.Content)
                         : Task.FromResult<string>(null);
 
-                    var responseBodyPayloadTask = _includeResponseBody && (_maxResponseBodyLength >= responseMessage.Content.Headers.ContentLength || responseMessage.Headers.TransferEncodingChunked.GetValueOrDefault())
+                    var responseBodyPayloadTask = _includeResponseBody && ShouldReadBody(responseMessage.Content, _maxResponseBodyLength)
                         ? ReadBodyAsync(responseMessage.Content)
                         : Task.FromResult<string>(null);
 
                     await Task.WhenAll(requestBodyPayloadTask, responseBodyPayloadTask).ConfigureAwait(false);
 
-                    Log(requestMessage, responseMessage, collector, requestBodyPayloadTask.Result, responseBodyPayloadTask.Result, (int)responseMessage.StatusCode, LoggingHelper.GetElapsedMilliseconds(startTimestamp, stop), true, null);
+                    Log(requestMessage, responseMessage, collector, requestBodyPayloadTask.Result, responseBodyPayloadTask.Result, (int)responseMessage.StatusCode, startTimestamp, stopTimestamp, true, null);
                 }
                 else
                 {
-                    Log(requestMessage, responseMessage, collector, null, null, (int)responseMessage.StatusCode, LoggingHelper.GetElapsedMilliseconds(startTimestamp, stop), false, null);
+                    Log(requestMessage, responseMessage, collector, null, null, (int)responseMessage.StatusCode, startTimestamp, stopTimestamp, false, null);
                 }
             }
             catch (Exception ex)
-                when (Log(requestMessage, responseMessage, collector, null, null, 500, LoggingHelper.GetElapsedMilliseconds(startTimestamp, Stopwatch.GetTimestamp()), isAllowedToLog, ex))
+                when (Log(requestMessage, responseMessage, collector, null, null, 500, startTimestamp, startTimestamp == 0
+                          ? 0
+                          : Stopwatch.GetTimestamp(), shouldIncludeDetails, ex))
             {
             }
             finally
@@ -158,30 +161,23 @@ namespace Ogu.Extensions.Logging.HttpClient
             _maxResponseBodyLength = options.MaxResponseBodyLength;
             _includeRequestHeaders = options.IncludeRequestHeaders;
             _includeResponseHeaders = options.IncludeResponseHeaders;
-            _redactRequestHeaders = options.RedactRequestHeaders == null 
-                ? new HashSet<string>() 
+            _redactRequestHeaders = options.RedactRequestHeaders == null
+                ? new HashSet<string>()
                 : new HashSet<string>(options.RedactRequestHeaders, StringComparer.OrdinalIgnoreCase);
-            _redactResponseHeaders = options.RedactResponseHeaders == null 
-                ? new HashSet<string>() 
+            _redactResponseHeaders = options.RedactResponseHeaders == null
+                ? new HashSet<string>()
                 : new HashSet<string>(options.RedactResponseHeaders, StringComparer.OrdinalIgnoreCase);
 
             if (!options.NotAllowedToLogBodyRequests?.SequenceEqual(_notAllowedToLogBodyRequests) ?? _notAllowedToLogBodyRequests.Length > 0)
             {
                 _notAllowedToLogBodyRequests = options.NotAllowedToLogBodyRequests ?? Array.Empty<string>();
-                _exclusionRegex = _notAllowedToLogBodyRequests.Length > 0 
-                    ? new Regex(string.Join("|", _notAllowedToLogBodyRequests.Select(Regex.Escape)), RegexOptions.IgnoreCase | RegexOptions.Compiled) 
+                _exclusionRegex = _notAllowedToLogBodyRequests.Length > 0
+                    ? new Regex(string.Join("|", _notAllowedToLogBodyRequests.Select(Regex.Escape)), RegexOptions.IgnoreCase | RegexOptions.Compiled)
                     : null;
             }
         }
 
-        public async Task<string> ReadBodyAsync(HttpContent httpContent)
-        {
-            return LoggingHelper.UnreadableContentTypes.Contains(httpContent.Headers.ContentType.MediaType)
-                ? Convert.ToBase64String(await httpContent.ReadAsByteArrayAsync().ConfigureAwait(false))
-                : await httpContent.ReadAsStringAsync().ConfigureAwait(false);
-        }
-
-        private bool Log(HttpRequestMessage requestMessage, HttpResponseMessage responseMessage, LoggingContextCollector collector, string requestBody, string responseBody, int statusCode, double elapsedMs, bool isAllowedToLog, Exception ex)
+        private bool Log(HttpRequestMessage requestMessage, HttpResponseMessage responseMessage, LoggingContextCollector collector, string requestBody, string responseBody, int statusCode, long startTimestamp, long stopTimestamp, bool shouldIncludeDetails, Exception ex)
         {
             var level = _getLevel(responseMessage, ex);
 
@@ -194,7 +190,9 @@ namespace Ogu.Extensions.Logging.HttpClient
 
             collector.Get(out var collectedProperties, out var collectedException);
 
-            var properties = collectedProperties.Concat(_getMessageTemplateProperties(requestMessage, responseMessage, GetUriString(requestMessage.RequestUri, _includeQueryInRequestPath), requestBody, responseBody, elapsedMs, statusCode, _redactRequestHeaders, _redactResponseHeaders, isAllowedToLog && _includeRequestHeaders, isAllowedToLog && _includeResponseHeaders));
+            var elapsedMs = stopTimestamp == 0 ? 0 : LoggingHelper.GetElapsedMilliseconds(startTimestamp, stopTimestamp);
+
+            var properties = collectedProperties.Concat(_getMessageTemplateProperties(requestMessage, responseMessage, GetUriString(requestMessage.RequestUri, _includeQueryInRequestPath), requestBody, responseBody, elapsedMs, statusCode, _redactRequestHeaders, _redactResponseHeaders, shouldIncludeDetails && _includeRequestHeaders, shouldIncludeDetails && _includeResponseHeaders));
 
             _logger.Log(level, ex ?? collectedException, _messageTemplate, properties);
 
@@ -208,6 +206,25 @@ namespace Ogu.Extensions.Logging.HttpClient
                 : requestUri.IsAbsoluteUri && includeQueryInRequestPath
                     ? requestUri.AbsoluteUri
                     : requestUri.ToString();
+        }
+
+        private static bool ShouldReadBody(
+            HttpContent content,
+            long maxBodyLength)
+        {
+            return content != null
+                   && maxBodyLength >= 0
+                   && content.Headers.ContentLength != null
+                   && content.Headers.ContentLength <= maxBodyLength;
+        }
+
+        private static async Task<string> ReadBodyAsync(HttpContent httpContent)
+        {
+            var mediaType = httpContent.Headers.ContentType?.MediaType;
+
+            return mediaType != null && LoggingHelper.UnreadableContentTypes.Contains(mediaType)
+                ? Convert.ToBase64String(await httpContent.ReadAsByteArrayAsync().ConfigureAwait(false))
+                : await httpContent.ReadAsStringAsync().ConfigureAwait(false);
         }
     }
 }
