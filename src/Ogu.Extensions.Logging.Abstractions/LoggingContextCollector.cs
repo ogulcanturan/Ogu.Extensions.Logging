@@ -49,7 +49,7 @@ namespace Ogu.Extensions.Logging.Abstractions
         {
             lock (_lock)
             {
-                properties = _properties;
+                properties = _properties ?? new Dictionary<string, object>();
             }
         }
 
@@ -57,7 +57,7 @@ namespace Ogu.Extensions.Logging.Abstractions
         {
             lock (_lock)
             {
-                properties = _properties;
+                properties = _properties ?? new Dictionary<string, object>();
                 exception = _exception;
             }
         }
@@ -66,11 +66,7 @@ namespace Ogu.Extensions.Logging.Abstractions
         {
             lock (_lock)
             {
-#if NETSTANDARD2_1
-                return _properties.GetValueOrDefault(propertyName);
-#else
-                return _properties.TryGetValue(propertyName, out var result) ? result : null;
-#endif
+                return _properties != null && _properties.TryGetValue(propertyName, out var result) ? result : null;
             }
         }
 
